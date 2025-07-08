@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Question GPT by Vishal Yadav</title>
+  <style>
+    /* --- Base & Theme Variables --- */
+    :root {
+      --primary-bg: #f0f4f8;
+      --secondary-bg: #ffffff;
+      --component-bg: #f8f9fa;
+      --text-color: #333;
+      --border-color: #dee2e6;
+      --shadow-color: rgba(0, 0, 0, 0.08);
+      --accent-color: #007bff;
+      --accent-hover: #0056b3;
+      --correct-color: #28a745;
+      --incorrect-color: #dc3545;
+      --skipped-color: #ffc107;
+      --bookmark-color: #a5a5a5;
+      --bookmarked-active-color: #ffb300;
+      --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body.dark-mode {
+      --primary-bg: #121212;
+      --secondary-bg: #1e1e1e;
+      --component-bg: #2a2a2e;
+      --text-color: #e0e0e0;
+      --border-color: #44474b;
+      --shadow-color: rgba(255, 255, 255, 0.08);
+      --accent-color: #4dabf7;
+      --accent-hover: #1c7ed6;
+    }
+
+    /* --- General Styles --- */
+    body {
+      font-family: var(--font-family);
+      background-color: var(--primary-bg);
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column; 
+      justify-content: flex-start;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      box-sizing: border-box;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 800px;
+      background-color: var(--secondary-bg);
+      border-radius: 10px;
+      box-shadow: 0 4px 15px var(--shadow-color);
+      overflow: hidden;
+      transition: background-color 0.3s;
+      margin-bottom: 20px;
+      padding: 2rem 2.5rem;
+    }
+    
+    .header {
+      background-color: var(--accent-color);
+      color: white;
+      padding: 15px 20px;
+      text-align: center;
+      font-size: 1.5em;
+      position: relative;
+      margin: -2rem -2.5rem 2rem -2.5rem; /* Adjust to fit padding */
+      border-radius: 10px 10px 0 0;
+    }
+    body.dark-mode .header { background-color: #1f1f1f; border-bottom: 1px solid var(--border-color); }
+    
+    .hidden { display: none !important; }
+
+    /* --- Welcome Screen --- */
+    #welcome-screen .welcome-buttons { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+    .welcome-btn {
+        padding: 1.2rem; text-align: left; font-size: 1.1rem;
+        background-color: var(--component-bg); border: 1px solid var(--border-color);
+        color: var(--text-color); border-radius: 8px; cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .welcome-btn:hover { transform: translateY(-3px); box-shadow: 0 6px 12px var(--shadow-color); border-color: var(--accent-color); }
+    .welcome-btn strong { display: block; color: var(--accent-color); margin-bottom: 0.4rem; font-size: 1.2rem; }
+    .welcome-btn span { font-size: 0.9rem; opacity: 0.8; }
+
+
+    /* --- AI GENERATOR STYLES --- */
+    .input-group { margin-bottom: 1.5rem; }
+    .input-label { display: block; margin-bottom: 8px; font-weight: bold; }
+    .input-field, textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 5px;
+      box-sizing: border-box;
+      background-color: var(--component-bg);
+      color: var(--text-color);
+      font-family: var(--font-family);
+      font-size: 1em;
+    }
+    textarea { height: 150px; resize: vertical; }
+    .api-key-section { display: flex; gap: 10px; align-items: center; }
+    #key-status { font-size: 0.9em; margin-top: 5px; height: 1.2em; }
+    .status-success { color: var(--correct-color); }
+    .status-error { color: var(--incorrect-color); }
+
+    .image-upload-area { border: 2px dashed var(--border-color); border-radius: 8px; padding: 2rem; text-align: center; cursor: pointer; transition: border-color 0.2s, background-color 0.2s; }
+    .image-upload-area:hover { border-color: var(--accent-color); background-color: var(--component-bg); }
+    #image-preview-container { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 1rem; }
+    .image-preview { max-width: 150px; max-height: 150px; border-radius: 8px; object-fit: cover; }
+    #file-input { display: none; }
+    
+    .generator-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.2rem; margin: 1.5rem 0; }
+    .generator-options .input-group { margin-bottom: 0; }
+    
+    .generator-error {
+      background-color: #fbeee6;
+      color: var(--incorrect-color);
+      border: 1px solid var(--incorrect-color);
+      padding: 1rem;
+      border-radius: 5px;
+      margin: 1rem 0;
+      text-align: left;
+      font-weight: 500;
+      line-height: 1.5;
+    }
+    body.dark-mode .generator-error {
+        background-color: #4a1c20;
+        color: #f1b0b7;
+        border-color: #dc3545;
+    }
+    
+    #ai-loader { display: none; text-align: center; padding: 20px; }
+    .spinner { display: inline-block; width: 50px; height: 50px; border: 5px solid var(--border-color); border-top-color: var(--accent-color); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 10px; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    /* --- QUIZ PLAYER (NEW UI) --- */
+    #quiz-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px dashed var(--border-color); gap: 1rem; }
+    #question-topic { font-weight: bold; color: var(--accent-color); font-size: 1.1rem; }
+    #progress { background-color: var(--accent-color); color: white; padding: 5px 12px; border-radius: 15px; font-size: 0.9rem; font-weight: bold; white-space: nowrap; }
+    #timer { font-weight: bold; background: var(--component-bg); padding: 5px 12px; border-radius: 15px; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 8px; position: relative; width: 80px; justify-content: center;}
+    .timer-face { font-size: 1.2rem; display: none; }
+    .timer-face.visible { display: inline-block; animation: face-pop 0.4s ease-out; }
+    @keyframes face-pop { 0% { transform: scale(0.5); opacity: 0; } 80% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+    #question-image-container { margin-bottom: 1rem; }
+    #question-image-container img { max-width: 100%; max-height: 400px; border-radius: 8px; display: block; margin: auto; border: 1px solid var(--border-color); }
+    #question-and-bookmark { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 1rem; }
+    #question-text-container { flex-grow: 1; }
+    #question-text { font-size: 1.4em; font-weight: 500; margin: 0; }
+    #bookmark-btn { background: none; border: 1px solid var(--border-color); color: var(--bookmark-color); font-size: 1.5rem; cursor: pointer; border-radius: 50%; width: 44px; height: 44px; flex-shrink: 0; display: flex; justify-content: center; align-items: center; transition: all 0.2s ease; }
+    #bookmark-btn:hover { background-color: var(--component-bg); transform: scale(1.1); }
+    #bookmark-btn.bookmarked { color: white; background-color: var(--bookmarked-active-color); border-color: var(--bookmarked-active-color); }
+    #statements-list p { margin: 0.5em 0; background: var(--component-bg); padding: 10px; border-radius: 5px; border-left: 3px solid var(--accent-color); }
+    .option { position: relative; border: 2px solid var(--border-color); padding: 12px 15px; margin-bottom: 10px; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: space-between; }
+    .option:hover { border-color: var(--accent-hover); background-color: var(--component-bg); }
+    .option.selected { border-color: var(--accent-color); background-color: #eaf5ff; }
+    body.dark-mode .option.selected { background-color: #36363c; }
+    .option.correct { border-color: var(--correct-color); background-color: #e9f7ef; color: #145a32; font-weight: bold; }
+    body.dark-mode .option.correct { background-color: #1c3c24; color: #a3d9b1; }
+    .option.incorrect { border-color: var(--incorrect-color); background-color: #fbeee6; color: #943126; font-weight: bold; }
+    body.dark-mode .option.incorrect { background-color: #4a1c20; color: #f1b0b7; }
+    .option.disabled { pointer-events: none; opacity: 0.8; }
+    .option-feedback { display: flex; align-items: center; gap: 10px; }
+    .feedback-icon, .user-choice-emoji { font-size: 1.5rem; }
+    .user-choice-emoji { display: none; } /* Hidden by default */
+    .user-choice-emoji.visible { display: inline-block; animation: pop-in 0.5s ease-out forwards; }
+    .feedback-icon { transform: scale(0); animation: pop-in 0.5s ease-out forwards; }
+    @keyframes pop-in { 0% { transform: scale(0); opacity: 0; } 70% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+    #explanation-container { margin-top: 1.5rem; padding: 1rem; background-color: var(--component-bg); border-left: 5px solid var(--accent-color); border-radius: 5px; }
+    #explanation-container h4 { margin-top: 0; }
+    #quiz-actions { margin-top: 1rem; display: flex; gap: 10px; flex-wrap: wrap; }
+    
+    /* --- General Button Styles --- */
+    .btn { background-color: var(--accent-color); color: white; padding: 12px 25px; border: none; border-radius: 5px; cursor: pointer; font-size: 1.1em; text-align: center; transition: background-color 0.3s; margin: 5px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: auto; flex-grow: 1; }
+    .btn-full-width { width: 100%; margin: 10px 0; flex-grow: 0; }
+    .btn:hover:not(:disabled) { background-color: var(--accent-hover); }
+    .btn:disabled { background-color: #bdc3c7; cursor: not-allowed; }
+    body.dark-mode .btn:disabled { background-color: #555; }
+    .btn-secondary { background-color: #6c757d; }
+    .btn-secondary:hover { background-color: #5a6268; }
+    .btn-danger { background-color: var(--incorrect-color); }
+    .btn-danger:hover { background-color: #c82333; }
+    #check-answer-btn { background-color: var(--correct-color); }
+    #check-answer-btn:hover { background-color: #218838; }
+    #skip-question-btn { background-color: var(--skipped-color); color: #212529;}
+    #skip-question-btn:hover { background-color: #e0a800; }
+    #next-question-btn { background-color: var(--accent-color); }
+    #next-question-btn:hover { background-color: var(--accent-hover); }
+
+    /* --- RESULTS & ANALYSIS --- */
+    #results-screen h2 { color: var(--correct-color); border-bottom-color: var(--correct-color); }
+    #score-summary { font-size: 1.5rem; font-weight: bold; text-align: center; margin-bottom: 1.5rem; }
+    #quiz-summary-details { background-color: var(--component-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .summary-item { display: flex; flex-direction: column; }
+    .summary-label { font-size: 0.9em; color: #6c757d; font-weight: 500;}
+    .summary-value { font-size: 1.2em; font-weight: bold; }
+    .summary-value.remark { color: var(--accent-color); }
+    body.dark-mode .summary-label { color: #aaa; }
+    .result-item { border: 1px solid var(--border-color); padding: 1rem; margin-bottom: 1rem; border-radius: 8px; background-color: var(--component-bg); }
+    .result-item .result-question { font-weight: bold; position: relative; }
+    .bookmark-indicator { color: var(--bookmarked-active-color); font-size: 1.2rem; position: absolute; top: 0; right: 0; opacity: 0; transition: opacity 0.3s; }
+    .bookmark-indicator.visible { opacity: 1; }
+    .result-options-list { margin-top: 1rem; padding-left: 0; list-style-type: none; }
+    .result-option { padding: 8px; border-radius: 4px; margin-bottom: 5px; border: 1px solid transparent; }
+    .result-option.user-selected { border-color: var(--accent-color); }
+    .result-option.correct-answer { background-color: #d4edda; }
+    body.dark-mode .result-option.correct-answer { background-color: #1c3c24; }
+    .result-explanation { margin-top: 1rem; padding: 1rem; background-color: var(--primary-bg); border-left: 4px solid var(--accent-color); border-radius: 5px; font-size: 0.95em; }
+    .result-explanation h5 { margin-top: 0; }
+
+    .share-buttons { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; justify-content: center; align-items: center;}
+    .share-buttons-row { display: flex; gap: 10px; justify-content: center; width: 100%;}
+    #results-page-telegram-opener { width: 100%; max-width: 400px; }
+    .telegram-input-group { display: flex; gap: 10px; align-items: center; }
+    .telegram-input-group .input-field { flex-grow: 1; margin: 0; }
+    .telegram-input-group .btn { flex-grow: 0; padding: 12px 15px; margin: 0; }
+
+    /* --- MISC --- */
+    #theme-toggle-btn { position: absolute; top: 50%; transform: translateY(-50%); right: 20px; background: none; border: 1px solid rgba(255, 255, 255, 0.7); color: white; width: 40px; height: 40px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; transition: all 0.3s ease; display: flex; justify-content: center; align-items: center; }
+    #theme-toggle-btn:hover { background-color: rgba(255, 255, 255, 0.2); transform: translateY(-50%) rotate(15deg) scale(1.1); }
+  </style>
+</head>
+<body>
+
+<!-- ======================================= -->
+<!-- ========== WELCOME SCREEN =========== -->
+<!-- ======================================= -->
+<div class="container" id="welcome-container">
+    <div class="header">
+        <span>🤖 Question GPT by Vishal Yadav</span>
+        <button id="theme-toggle-btn" title="Toggle Dark/Light Mode">🌙</button>
+    </div>
+    <div id="welcome-screen">
+        <h2>How would you like to create a quiz?</h2>
+        <div class="input-group">
+            <label for="api-key-input" class="input-label">Google AI API Key</label>
+            <div class="api-key-section">
+                <input type="password" id="api-key-input" class="input-field" placeholder="Enter your Gemini API Key">
+                <button id="save-key-btn" class="btn">Save</button>
+            </div>
+            <div id="key-status"></div>
+        </div>
+        <div class="welcome-buttons">
+            <button class="welcome-btn" id="show-topic-generator-btn">
+                <strong>Create from Topic (AI-Led)</strong>
+                <span>AI generates new questions from a topic and exam style.</span>
+            </button>
+            <button class="welcome-btn" id="show-content-generator-btn">
+                <strong>Create from Your Material (AI-Assisted)</strong>
+                <span>Paste text, upload notes, or provide existing questions for the AI to process.</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ======================================= -->
+<!-- ====== TOPIC-BASED GENERATOR ======== -->
+<!-- ======================================= -->
+<div class="container hidden" id="topic-generator-container">
+    <div class="header"><span>🧠 Create from Topic</span></div>
+    <div id="topic-generator-screen">
+        <p>The AI will create questions from its own knowledge, tailored to your specifications.</p>
+        <div class="input-group">
+            <label for="topic-name-input" class="input-label">Topic Name</label>
+            <input type="text" id="topic-name-input" class="input-field" placeholder="e.g., The Indian Monsoon, Quantum Physics">
+        </div>
+        <div class="input-group">
+            <label for="subject-name-input" class="input-label">Subject</label>
+            <input type="text" id="subject-name-input" class="input-field" placeholder="e.g., Geography, Physics">
+        </div>
+        <div class="generator-options">
+            <div class="input-group"><label for="topic-num-questions-input" class="input-label"># of Questions</label><input type="number" id="topic-num-questions-input" class="input-field" value="5" min="1" max="20"></div>
+            <div class="input-group"><label for="topic-difficulty-select" class="input-label">Difficulty</label><select id="topic-difficulty-select" class="input-field"><option value="Easy">Easy</option><option value="Medium" selected>Medium</option><option value="Hard">Hard</option></select></div>
+            <div class="input-group"><label for="topic-exam-input" class="input-label">Target Exam</label><input type="text" id="topic-exam-input" class="input-field" placeholder="e.g., UPSC, NEET, SAT"></div>
+             <div class="input-group"><label for="topic-format-select" class="input-label">Format</label><select id="topic-format-select" class="input-field">
+                <option value="Standard MCQ">Standard MCQ</option>
+                <option value="Assertion-Reason">Assertion-Reason</option>
+                <option value="Statement-Based">Statement-Based (UPSC Style)</option>
+                <option value="True/False">True/False</option>
+                <option value="Mixed">Mixed (All Formats)</option>
+            </select></div>
+        </div>
+        <div id="topic-generator-error" class="generator-error hidden"></div>
+        <button id="generate-topic-quiz-btn" class="btn btn-full-width">Generate AI Quiz ✨</button>
+        <button id="back-to-welcome-btn-1" class="btn btn-full-width btn-secondary">Back to Main Menu</button>
+    </div>
+</div>
+
+<!-- ======================================= -->
+<!-- ====== CONTENT-BASED GENERATOR ====== -->
+<!-- ======================================= -->
+<div class="container hidden" id="content-generator-container">
+    <div class="header"><span>📝 Create from Your Material</span></div>
+    <div id="content-generator-screen">
+         <p>Paste any text below. The AI will intelligently decide whether to create new questions from your notes or parse a pre-written quiz you provide.</p>
+        <div class="input-group">
+            <label for="content-text-input" class="input-label">Paste Your Text Here</label>
+            <textarea id="content-text-input" class="input-field" style="height: 250px;" placeholder="Paste an article, your study notes, or even a list of questions and answers..."></textarea>
+        </div>
+        <div class="input-group">
+            <label class="input-label">Or Upload Images</label>
+            <div id="image-upload-area" class="image-upload-area">
+                <p>Click to upload one or more images of notes or textbook pages.</p>
+                <input type="file" id="file-input" accept="image/*" multiple>
+                <div id="image-preview-container"></div>
+            </div>
+        </div>
+        <div class="generator-options">
+            <div class="input-group"><label for="content-num-questions-input" class="input-label"># of Questions</label><input type="number" id="content-num-questions-input" class="input-field" value="5" min="1" max="20"></div>
+            <div class="input-group"><label for="content-difficulty-select" class="input-label">Difficulty</label><select id="content-difficulty-select" class="input-field"><option value="Easy">Easy</option><option value="Medium" selected>Medium</option><option value="Hard">Hard</option></select></div>
+            <div class="input-group"><label for="content-exam-input" class="input-label">Target Exam</label><input type="text" id="content-exam-input" class="input-field" placeholder="e.g., UPSC, NEET, SAT"></div>
+            <div class="input-group">
+                <label for="content-format-select" class="input-label">Format</label>
+                <select id="content-format-select" class="input-field">
+                    <option value="Standard MCQ" selected>Standard MCQ</option>
+                    <option value="Assertion-Reason">Assertion-Reason</option>
+                    <option value="Statement-Based">Statement-Based</option>
+                    <option value="Image-Based">Image-Based Question</option>
+                    <option value="True/False">True/False</option>
+                    <option value="Fill in the Blank">Fill in the Blank</option>
+                    <option value="Mixed">Mixed (All Formats)</option>
+                </select>
+            </div>
+        </div>
+        <div id="content-generator-error" class="generator-error hidden"></div>
+        <button id="generate-content-quiz-btn" class="btn btn-full-width">Process with AI 📝</button>
+        <button id="back-to-welcome-btn-2" class="btn btn-full-width btn-secondary">Back to Main Menu</button>
+    </div>
+</div>
+
+<!-- ======================================= -->
+<!-- ============ AI LOADER ================ -->
+<!-- ======================================= -->
+<div class="container hidden" id="ai-loader-container">
+    <div class="header"><span>AI is Working...</span></div>
+    <div id="ai-loader">
+        <div class="spinner"></div>
+        <!-- UPDATED: Added separate elements for main text and status -->
+        <p id="ai-loader-main-text">Analyzing your request and crafting questions...</p>
+        <p id="ai-loader-status" style="font-weight: bold; min-height: 1.2em;"></p>
+    </div>
+</div>
+
+<!-- ======================================= -->
+<!-- ========= QUIZ PLAYER SCREEN ========== -->
+<!-- ======================================= -->
+<div class="container hidden" id="quiz-player-container">
+    <div class="header" id="quiz-header-main"><span>Enhanced Quiz Player</span></div>
+    <div id="quiz-header">
+        <span id="question-topic">Topic</span>
+        <span id="timer">
+            <span class="timer-face" id="face-happy">😊</span>
+            <span class="timer-face" id="face-worried">😟</span>
+            <span class="timer-face" id="face-hot">🥵</span>
+            <span id="timer-text">03:00</span>
+        </span>
+        <span id="progress">Question 1 / 3</span>
+    </div>
+    <div id="question-image-container" class="hidden"></div>
+    <div id="question-and-bookmark">
+        <div id="question-text-container">
+            <p id="question-text">This is where the question text will go.</p>
+            <div id="statements-list"></div>
+        </div>
+        <button id="bookmark-btn" title="Bookmark Question">⭐</button>
+    </div>
+    <div id="options-container"></div>
+    <div id="explanation-container" class="hidden"></div>
+    <div id="quiz-actions"></div>
+</div>
+
+
+<!-- ======================================= -->
+<!-- =========== RESULTS SCREEN ============ -->
+<!-- ======================================= -->
+<div class="container hidden" id="results-screen">
+    <div class="header"><h2>🏆 Quiz Results</h2></div>
+    <div id="score-summary">You scored 2 out of 3!</div>
+    <div id="quiz-summary-details"></div>
+    <div class="share-buttons">
+        <div class="share-buttons-row">
+            <button id="share-pdf-btn" class="btn">📄 Download PDF</button>
+            <button id="copy-bookmarks-btn" class="btn" style="background-color: var(--bookmarked-active-color);">📋 Copy Bookmarked</button>
+            <button id="share-whatsapp-btn" class="btn" style="background-color: #25D366;">💬 Share on WhatsApp</button>
+        </div>
+        <div id="results-page-telegram-opener">
+             <div class="telegram-input-group">
+                <input type="text" id="results-page-telegram-input" class="input-field" placeholder="Open a Telegram Channel...">
+                <button id="results-page-open-telegram-btn" class="btn btn-secondary">Open</button>
+            </div>
+        </div>
+    </div>
+    <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 2rem 0;">
+    <h3>Review Your Answers:</h3>
+    <div id="results-review"></div>
+    <button id="restart-quiz-btn" class="btn btn-full-width">🔄 Take Another Quiz</button>
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    // --- DOM ELEMENT DICTIONARY ---
+    const screens = {
+        welcome: document.getElementById('welcome-container'),
+        topicGenerator: document.getElementById('topic-generator-container'),
+        contentGenerator: document.getElementById('content-generator-container'),
+        loader: document.getElementById('ai-loader-container'),
+        player: document.getElementById('quiz-player-container'),
+        results: document.getElementById('results-screen'),
+    };
+
+    const elements = {
+        // Welcome & Global
+        apiKeyInput: document.getElementById('api-key-input'),
+        saveKeyBtn: document.getElementById('save-key-btn'),
+        keyStatus: document.getElementById('key-status'),
+        showTopicGeneratorBtn: document.getElementById('show-topic-generator-btn'),
+        showContentGeneratorBtn: document.getElementById('show-content-generator-btn'),
+        themeToggleBtn: document.getElementById('theme-toggle-btn'),
+        backToWelcomeBtns: [
+            document.getElementById('back-to-welcome-btn-1'),
+            document.getElementById('back-to-welcome-btn-2'),
+        ],
+
+        // Topic Generator
+        topicNameInput: document.getElementById('topic-name-input'),
+        subjectNameInput: document.getElementById('subject-name-input'),
+        topicNumQuestionsInput: document.getElementById('topic-num-questions-input'),
+        topicDifficultySelect: document.getElementById('topic-difficulty-select'),
+        topicExamInput: document.getElementById('topic-exam-input'),
+        topicFormatSelect: document.getElementById('topic-format-select'),
+        generateTopicQuizBtn: document.getElementById('generate-topic-quiz-btn'),
+        topicGeneratorError: document.getElementById('topic-generator-error'),
+
+        // Content Generator
+        contentTextInput: document.getElementById('content-text-input'),
+        imageUploadArea: document.getElementById('image-upload-area'),
+        fileInput: document.getElementById('file-input'),
+        imagePreviewContainer: document.getElementById('image-preview-container'),
+        contentNumQuestionsInput: document.getElementById('content-num-questions-input'),
+        contentDifficultySelect: document.getElementById('content-difficulty-select'),
+        contentExamInput: document.getElementById('content-exam-input'),
+        contentFormatSelect: document.getElementById('content-format-select'),
+        generateContentQuizBtn: document.getElementById('generate-content-quiz-btn'),
+        contentGeneratorError: document.getElementById('content-generator-error'),
+        
+        // Loader
+        loaderMainText: document.getElementById('ai-loader-main-text'), // NEW
+        loaderStatus: document.getElementById('ai-loader-status'), // NEW
+        
+        // Quiz Player
+        questionTopic: document.getElementById('question-topic'),
+        progress: document.getElementById('progress'),
+        timerText: document.getElementById('timer-text'),
+        faceHappy: document.getElementById('face-happy'),
+        faceWorried: document.getElementById('face-worried'),
+        faceHot: document.getElementById('face-hot'),
+        questionImageContainer: document.getElementById('question-image-container'),
+        bookmarkBtn: document.getElementById('bookmark-btn'),
+        questionText: document.getElementById('question-text'),
+        statementsList: document.getElementById('statements-list'),
+        optionsContainer: document.getElementById('options-container'),
+        explanationContainer: document.getElementById('explanation-container'),
+        quizActions: document.getElementById('quiz-actions'),
+        
+        // Results
+        scoreSummary: document.getElementById('score-summary'),
+        quizSummaryDetails: document.getElementById('quiz-summary-details'),
+        resultsReview: document.getElementById('results-review'),
+        restartBtn: document.getElementById('restart-quiz-btn'),
+        sharePdfBtn: document.getElementById('share-pdf-btn'),
+        copyBookmarksBtn: document.getElementById('copy-bookmarks-btn'),
+        shareWhatsAppBtn: document.getElementById('share-whatsapp-btn'),
+        resultsPageTelegramInput: document.getElementById('results-page-telegram-input'),
+        resultsPageOpenTelegramBtn: document.getElementById('results-page-open-telegram-btn'),
+    };
+
+    // --- STATE MANAGEMENT ---
+    let quizData = [];
+    let currentQuestionIndex = 0;
+    let userAnswers = [];
+    let bookmarkedQuestions = new Set();
+    let skippedQuestionIndices = [];
+    let selectedOptionIndex = null;
+    let multipleImageData = [];
+    let timerId = null;
+    let quizStartTime = null;
+    const TIME_PER_QUESTION = 180; // seconds
+
+    // --- INITIALIZATION ---
+    loadApiKey();
+    applyInitialTheme();
+    setupEventListeners();
+    showScreen('welcome');
+
+    // --- SCREEN NAVIGATION ---
+    function showScreen(screenName) {
+        Object.values(screens).forEach(screen => screen.classList.add('hidden'));
+        if (screens[screenName]) {
+            screens[screenName].classList.remove('hidden');
+        }
+    }
+
+    // --- EVENT LISTENERS ---
+    function setupEventListeners() {
+        // Navigation
+        elements.showTopicGeneratorBtn.addEventListener('click', () => showScreen('topicGenerator'));
+        elements.showContentGeneratorBtn.addEventListener('click', () => showScreen('contentGenerator'));
+        elements.backToWelcomeBtns.forEach(btn => btn.addEventListener('click', () => showScreen('welcome')));
+
+        // Generators
+        elements.saveKeyBtn.addEventListener('click', saveApiKey);
+        elements.generateTopicQuizBtn.addEventListener('click', () => generateAIQuiz('topic'));
+        elements.generateContentQuizBtn.addEventListener('click', () => generateAIQuiz('content'));
+
+        // Content Generator UI
+        elements.imageUploadArea.addEventListener('click', () => elements.fileInput.click());
+        elements.fileInput.addEventListener('change', handleMultipleImageUploads);
+        
+        // Player & Results
+        elements.bookmarkBtn.addEventListener('click', handleBookmark);
+        elements.restartBtn.addEventListener('click', restartQuiz);
+        elements.sharePdfBtn.addEventListener('click', generatePDF);
+        elements.copyBookmarksBtn.addEventListener('click', copyBookmarks);
+        elements.shareWhatsAppBtn.addEventListener('click', shareOnWhatsApp);
+        elements.themeToggleBtn.addEventListener('click', toggleTheme);
+        elements.resultsPageOpenTelegramBtn.addEventListener('click', () => openTelegram(elements.resultsPageTelegramInput));
+    }
+
+    function displayGeneratorError(message, containerId) {
+        const errorContainer = document.getElementById(containerId);
+        if (errorContainer) {
+            errorContainer.innerHTML = message;
+            errorContainer.classList.remove('hidden');
+        } else { alert(message); }
+    }
+    
+    // --- FEATURE FUNCTIONS ---
+    function openTelegram(inputElement) {
+        const rawUsername = inputElement.value.trim();
+        if (!rawUsername) { alert('Please enter a Telegram username (without the "@").'); return; }
+        const cleanUsername = rawUsername.replace(/^@/, '');
+        const url = `https://t.me/${cleanUsername}`;
+        window.open(url, '_blank');
+    }
+    
+    function shareOnWhatsApp() {
+        const totalQuestions = quizData.length; if (totalQuestions === 0) return;
+        const correctCount = userAnswers.filter(ans => ans.isCorrect).length;
+        const incorrectCount = userAnswers.filter(ans => ans.status === 'answered' && !ans.isCorrect).length;
+        const skippedCount = userAnswers.filter(ans => ans.status === 'skipped' || ans.status === 'unseen').length;
+        const percentage = totalQuestions > 0 ? (correctCount / totalQuestions) * 100 : 0;
+        let remark = "Needs Improvement";
+        if (percentage >= 90) remark = "Excellent! ✨"; else if (percentage >= 75) remark = "Great Job! 👍"; else if (percentage >= 50) remark = "Good Effort! 😊";
+        const quizEndTime = new Date();
+        const timeDiff = quizStartTime ? Math.round((quizEndTime - quizStartTime) / 1000) : 0;
+        const minutes = Math.floor(timeDiff / 60); const seconds = timeDiff % 60;
+        const timeTaken = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        const topic = quizData[0]?.topic || 'a custom quiz';
+        const difficulty = quizData[0]?.difficulty || 'N/A';
+        const message = [`*🏆 My Quiz Results! 🏆*`, ``, `I just took a quiz on *${topic}*! Here's how I did:`, ``, `*Performance:* ${remark}`, `*Score:* ${correctCount} / ${totalQuestions} (${percentage.toFixed(0)}%)`, ``, `*📊 Breakdown:*`, `✔️ Correct: ${correctCount}`, `❌ Incorrect: ${incorrectCount}`, `⏭️ Skipped: ${skippedCount}`, ``, `*⚙️ Quiz Details:*`, `🕒 Time Taken: ${timeTaken}`, `💪 Difficulty: ${difficulty}`, ``, `Think you can do better? Try out Question GPT by Vishal Yadav!`].join('\n');
+        const encodedMessage = encodeURIComponent(message);
+        const whatsappUrl = `https://api.whatsapp.com/send?text=${encodedMessage}`;
+        window.open(whatsappUrl, '_blank');
+    }
+
+    // --- THEME & API KEY ---
+    function toggleTheme() {
+        document.body.classList.toggle('dark-mode');
+        const isDarkMode = document.body.classList.contains('dark-mode');
+        localStorage.setItem('quizTheme', isDarkMode ? 'dark' : 'light');
+        elements.themeToggleBtn.textContent = isDarkMode ? '☀️' : '🌙';
+    }
+
+    function applyInitialTheme() {
+        if (localStorage.getItem('quizTheme') === 'dark') {
+            document.body.classList.add('dark-mode');
+            elements.themeToggleBtn.textContent = '☀️';
+        }
+    }
+
+    function loadApiKey() {
+        const savedKey = localStorage.getItem('geminiApiKey');
+        if (savedKey) {
+            elements.apiKeyInput.value = savedKey;
+            elements.keyStatus.textContent = 'API Key loaded from local storage.';
+            elements.keyStatus.className = 'status-success';
+        } else {
+            elements.keyStatus.textContent = 'Please enter your Google Gemini API Key.';
+            elements.keyStatus.className = 'status-error';
+        }
+    }
+
+    function saveApiKey() {
+        const key = elements.apiKeyInput.value.trim();
+        if (key) {
+            localStorage.setItem('geminiApiKey', key);
+            elements.keyStatus.textContent = 'API Key saved successfully!';
+            elements.keyStatus.className = 'status-success';
+        } else {
+            elements.keyStatus.textContent = 'API Key cannot be empty.';
+            elements.keyStatus.className = 'status-error';
+        }
+    }
+
+    // --- IMAGE HANDLING ---
+    function handleMultipleImageUploads(event) {
+        multipleImageData = [];
+        elements.imagePreviewContainer.innerHTML = '';
+        const files = event.target.files;
+        if (!files || files.length === 0) return;
+        for (const file of files) {
+            if (!file.type.startsWith('image/')) continue;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                multipleImageData.push({ mimeType: file.type, data: e.target.result.split(',')[1] });
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.className = 'image-preview';
+                elements.imagePreviewContainer.appendChild(img);
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+    
+    // --- AI QUIZ GENERATION & VALIDATION ---
+    async function generateAIQuiz(generatorType) {
+        const apiKey = elements.apiKeyInput.value.trim();
+        if (!apiKey) { alert('Please enter and save your API Key first.'); return; }
+
+        let promptConfig, originalScreen, errorContainerId;
+        if (generatorType === 'topic') {
+            promptConfig = { type: 'topic', topic: elements.topicNameInput.value, subject: elements.subjectNameInput.value, numQuestions: elements.topicNumQuestionsInput.value, difficulty: elements.topicDifficultySelect.value, targetExam: elements.topicExamInput.value, format: elements.topicFormatSelect.value };
+            originalScreen = 'topicGenerator'; errorContainerId = 'topic-generator-error';
+            if (!promptConfig.topic || !promptConfig.subject) { alert("Please fill in Topic and Subject fields."); return; }
+        } else {
+            promptConfig = { type: 'content', text: elements.contentTextInput.value, images: multipleImageData, numQuestions: elements.contentNumQuestionsInput.value, difficulty: elements.contentDifficultySelect.value, targetExam: elements.contentExamInput.value, format: elements.contentFormatSelect.value };
+            originalScreen = 'contentGenerator'; errorContainerId = 'content-generator-error';
+            if (!promptConfig.text && promptConfig.images.length === 0) { alert("Please provide some content (text or an image)."); return; }
+        }
+        
+        document.getElementById(errorContainerId)?.classList.add('hidden');
+        elements.loaderMainText.textContent = 'Analyzing your request and crafting questions...';
+        elements.loaderStatus.textContent = '';
+        showScreen('loader');
+
+        // NEW: Retry logic configuration
+        const maxRetries = 3;
+        const initialRetryDelay = 2000; // 2 seconds
+
+        try {
+            let lastError = null;
+            for (let attempt = 0; attempt <= maxRetries; attempt++) {
+                try {
+                    const prompt = buildAIPrompt(promptConfig);
+                    const model = "gemini-1.5-flash-latest";
+                    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+                    const promptParts = [{ text: prompt }];
+                    if (promptConfig.images?.length > 0) {
+                        promptConfig.images.forEach(img => promptParts.push({ inline_data: img }));
+                    }
+
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: promptParts }] })
+                    });
+                    
+                    if (!response.ok) {
+                        // Check for retryable errors (503 Service Unavailable, 429 Too Many Requests)
+                        if ((response.status === 503 || response.status === 429) && attempt < maxRetries) {
+                            const delay = initialRetryDelay * Math.pow(2, attempt);
+                            elements.loaderStatus.textContent = `AI service is busy. Retrying in ${delay / 1000} seconds... (Attempt ${attempt + 1}/${maxRetries})`;
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            continue; // Go to the next iteration of the loop
+                        }
+                        
+                        // If the error is not retryable or we've exhausted retries, throw an error to be caught.
+                        let detailedMessage = `<strong>Error (Status ${response.status})</strong>: `;
+                        const errorData = await response.json().catch(() => null);
+                        const messageFromServer = errorData?.error?.message || 'No additional details from server.';
+                        switch (response.status) {
+                            case 400: detailedMessage += "Bad Request. The AI couldn't process the input. Check your settings."; break;
+                            case 401: case 403: detailedMessage += "Authentication Failed. Please verify your API Key."; break;
+                            case 429: detailedMessage += "Quota Exceeded or Rate Limited. Please try again later."; break;
+                            case 500: case 503: detailedMessage += "Server Error. The AI service is temporarily unavailable."; break;
+                            default: detailedMessage += "An unexpected API error occurred.";
+                        }
+                        detailedMessage += `<br><small>Details: ${messageFromServer}</small>`;
+                        throw new Error(detailedMessage);
+                    }
+
+                    // If we reach here, the request was successful
+                    const data = await response.json();
+                    const rawText = data.candidates[0]?.content?.parts[0]?.text || "";
+                    const jsonMatch = rawText.match(/```json\n([\s\S]*?)\n```/);
+                    const jsonString = jsonMatch ? jsonMatch[1] : rawText.substring(rawText.indexOf('['), rawText.lastIndexOf(']') + 1);
+
+                    let parsedQuiz;
+                    try { parsedQuiz = JSON.parse(jsonString); } catch(e) { throw new Error("The AI returned a response in an invalid format. Please try again."); }
+                    
+                    const validatedQuiz = validateQuizData(parsedQuiz);
+                    if (validatedQuiz.length === 0) { throw new Error("The AI failed to generate a valid quiz. Please adjust your query and try again."); }
+                    quizData = validatedQuiz;
+                    
+                    if (promptConfig.type === 'content' && multipleImageData.length > 0) {
+                        const imageDataUrl = `data:${multipleImageData[0].mimeType};base64,${multipleImageData[0].data}`;
+                        quizData.forEach(q => q.image === true && (q.image = imageDataUrl));
+                    }
+                    startQuiz();
+                    return; // Exit the function on success
+                } catch (error) {
+                    lastError = error; // Store the error from the attempt
+                }
+            }
+            // If the loop finishes without success, throw the last recorded error
+            throw lastError;
+
+        } catch (error) {
+            console.error("Quiz Generation Error (Final):", error);
+            let finalErrorMessage = error.message;
+            if (error instanceof TypeError) { finalErrorMessage = "<strong>Network Error</strong>: Could not connect to the API. Check your internet connection."; }
+            showScreen(originalScreen);
+            displayGeneratorError(finalErrorMessage, errorContainerId);
+        }
+    }
+
+    function validateQuizData(data) {
+        if (!Array.isArray(data)) return [];
+        return data.filter(q => 
+            q && typeof q.question === 'string' && q.question.length > 0 &&
+            Array.isArray(q.options) && q.options.length >= 2 &&
+            typeof q.correctAnswerIndex === 'number' && q.correctAnswerIndex >= 0 && q.correctAnswerIndex < q.options.length &&
+            typeof q.explanation === 'string' && q.explanation.length > 0
+        );
+    }
+
+    function buildAIPrompt(config) {
+        const createMixedFormatPlan = (num) => {
+            const coreFormats = ['Standard MCQ', 'Statement-Based', 'Assertion-Reason', 'True/False'];
+            let plan = Array.from({ length: num }, (_, i) => coreFormats[i % coreFormats.length]);
+            for (let i = plan.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [plan[i], plan[j]] = [plan[j], plan[i]]; }
+            return plan.map((format, index) => `${index + 1}. ${format}`).join('\n');
+        };
+        const schema = `- "question": string\n- "options": Array<string>\n- "correctAnswerIndex": number\n- "explanation": string\n- "topic": string\n- "difficulty": string ("${config.difficulty}")\n- "statements": Array<string> (REQUIRED for 'Statement-Based' and 'Assertion-Reason')`;
+        const executionPlan = config.format === 'Mixed' ? `**Execution Plan:** Follow this exact, ordered plan:\n${createMixedFormatPlan(config.numQuestions)}` : `**Execution Plan:** Generate ${config.numQuestions} questions, all in the '${config.format}' format.`;
+        const mainInstruction = config.type === 'topic' ? `**Task:** Generate a new quiz from your internal knowledge.\n**Request:** Topic: ${config.topic}, Subject: ${config.subject}, Exam: ${config.targetExam}, Difficulty: ${config.difficulty}` : `**Task:** Analyze user-provided content. If it's a quiz, PARSE it. If notes, GENERATE new questions.\n**Request (for generation):** Exam: ${config.targetExam}, Difficulty: ${config.difficulty}\n**Content:**\n${config.text || "(No text provided, rely on images.)"}\n${config.images.length > 0 ? "An image has also been provided." : ""}`;
+        return `You are a Quiz Architect AI. Your goal is to produce a perfect, valid JSON array of quiz questions.
+**PROCEDURE:**
+1.  **Goal & Plan:**
+    ${mainInstruction}
+    ${executionPlan}
+2.  **Schema (NON-NEGOTIABLE):** Every object in the final JSON array MUST conform to this schema.
+    ${schema}
+3.  **Format Rules:**
+    - 'Statement-Based': MUST have a "statements" array.
+    - 'Assertion-Reason': "question" is Assertion(A). "statements" MUST be a single-item array for the Reason(R).
+    - Other formats: "statements" array must be empty or omitted.
+4.  **Self-Correction (CRITICAL):** For each question, verify:
+    [ ] Has all REQUIRED schema fields?
+    [ ] 'options' array has at least two strings?
+    [ ] 'correctAnswerIndex' is a valid number?
+    [ ] 'statements' array is correct for the format?
+    [ ] The 'question' text does not leak the answer?
+    **If a question fails ANY check, DISCARD it and generate a new one.** Only perfect questions are allowed.
+5.  **Final Output:** Produce ONLY the raw JSON array. No other text or markdown.
+Now, begin.`;
+    }
+    
+    // --- QUIZ PLAYER LOGIC (No changes made below this line) ---
+    function startQuiz() {
+        showScreen('player');
+        quizStartTime = new Date();
+        currentQuestionIndex = -1;
+        userAnswers = quizData.map(() => ({ selected: null, isCorrect: null, status: 'unseen' }));
+        bookmarkedQuestions.clear();
+        skippedQuestionIndices = [];
+        loadNextQuestion();
+    }
+
+    function loadNextQuestion() {
+        let nextIndex = userAnswers.findIndex((ans, index) => index > currentQuestionIndex && ans.status === 'unseen');
+        if (nextIndex === -1) {
+            if (skippedQuestionIndices.length > 0) {
+                nextIndex = skippedQuestionIndices.shift();
+            } else {
+                showResults();
+                return;
+            }
+        }
+        currentQuestionIndex = nextIndex;
+        displayQuestion();
+    }
+    
+    function displayQuestion() {
+        selectedOptionIndex = null;
+        elements.explanationContainer.classList.add('hidden');
+        elements.optionsContainer.innerHTML = '';
+        elements.statementsList.innerHTML = '';
+        elements.quizActions.innerHTML = '';
+        elements.questionImageContainer.classList.add('hidden'); 
+        elements.questionImageContainer.innerHTML = '';
+
+        const question = quizData[currentQuestionIndex];
+        const isSkippedReview = userAnswers[currentQuestionIndex].status === 'skipped';
+
+        if (question.image && typeof question.image === 'string') {
+            elements.questionImageContainer.innerHTML = `<img src="${question.image}" alt="Question Image">`;
+            elements.questionImageContainer.classList.remove('hidden');
+        }
+
+        elements.questionTopic.textContent = question.topic || "General";
+        elements.progress.textContent = `${isSkippedReview ? 'Reviewing Skipped' : 'Question'} ${userAnswers.filter(a => a.status !== 'unseen').length + 1} / ${quizData.length}`;
+        elements.questionText.textContent = question.question;
+        elements.bookmarkBtn.classList.toggle('bookmarked', bookmarkedQuestions.has(currentQuestionIndex));
+
+        if (question.statements && question.statements.length > 0) {
+            elements.statementsList.innerHTML = question.statements.map(stmt => `<p>${stmt}</p>`).join('');
+        }
+
+        question.options.forEach((optionText, index) => {
+            const optionDiv = document.createElement('div');
+            optionDiv.className = 'option';
+            optionDiv.dataset.index = index;
+            optionDiv.innerHTML = `<span class="option-text">${optionText}</span><div class="option-feedback"><span class="user-choice-emoji"></span><span class="feedback-icon"></span></div>`;
+            optionDiv.addEventListener('click', () => selectOption(index));
+            elements.optionsContainer.appendChild(optionDiv);
+        });
+        
+        const checkBtn = document.createElement('button');
+        checkBtn.id = 'check-answer-btn'; checkBtn.className = 'btn'; checkBtn.textContent = 'Check Answer'; checkBtn.disabled = true;
+        checkBtn.addEventListener('click', checkAnswer);
+        const skipBtn = document.createElement('button');
+        skipBtn.id = 'skip-question-btn'; skipBtn.className = 'btn'; skipBtn.textContent = 'Skip Question';
+        skipBtn.addEventListener('click', () => handleSkip());
+        const submitBtn = document.createElement('button');
+        submitBtn.id = 'force-submit-btn'; submitBtn.className = 'btn btn-danger'; submitBtn.textContent = 'Submit Quiz';
+        submitBtn.addEventListener('click', forceSubmitQuiz);
+
+        elements.quizActions.appendChild(checkBtn);
+        if (!isSkippedReview) { elements.quizActions.appendChild(skipBtn); }
+        elements.quizActions.appendChild(submitBtn);
+        startTimer();
+    }
+    
+    function startTimer() {
+        clearInterval(timerId);
+        let timeLeft = TIME_PER_QUESTION;
+        const updateTimerDisplay = () => {
+            elements.timerText.textContent = `${String(Math.floor(timeLeft / 60)).padStart(2, '0')}:${String(timeLeft % 60).padStart(2, '0')}`;
+            let currentFace = (timeLeft <= 60) ? elements.faceHot : (timeLeft <= 120) ? elements.faceWorried : elements.faceHappy;
+            if (!currentFace.classList.contains('visible')) {
+                [elements.faceHappy, elements.faceWorried, elements.faceHot].forEach(f => f.classList.remove('visible'));
+                currentFace.classList.add('visible');
+            }
+        };
+        updateTimerDisplay();
+        timerId = setInterval(() => {
+            timeLeft--;
+            updateTimerDisplay();
+            if (timeLeft <= 0) { clearInterval(timerId); handleSkip(true); }
+        }, 1000);
+    }
+    
+    function handleBookmark() {
+        bookmarkedQuestions.has(currentQuestionIndex) ? bookmarkedQuestions.delete(currentQuestionIndex) : bookmarkedQuestions.add(currentQuestionIndex);
+        elements.bookmarkBtn.classList.toggle('bookmarked');
+    }
+
+    function handleSkip(isAutoSkip = false) {
+        clearInterval(timerId);
+        if (userAnswers[currentQuestionIndex].status === 'unseen') {
+            userAnswers[currentQuestionIndex].status = 'skipped';
+            skippedQuestionIndices.push(currentQuestionIndex);
+        }
+        loadNextQuestion();
+    }
+
+    function forceSubmitQuiz() {
+        if (confirm('Are you sure you want to end the quiz now? All unanswered questions will be marked as skipped.')) {
+            clearInterval(timerId);
+            userAnswers.forEach((answer, index) => { if (answer.status === 'unseen') userAnswers[index].status = 'skipped'; });
+            showResults();
+        }
+    }
+
+    function selectOption(index) {
+        selectedOptionIndex = index;
+        document.querySelectorAll('.option').forEach((opt, i) => opt.classList.toggle('selected', i === index));
+        document.getElementById('check-answer-btn').disabled = false;
+    }
+
+    function checkAnswer() {
+        clearInterval(timerId);
+        const question = quizData[currentQuestionIndex];
+        const options = document.querySelectorAll('.option');
+        options.forEach(opt => opt.classList.add('disabled'));
+        
+        const isCorrect = selectedOptionIndex === question.correctAnswerIndex;
+        userAnswers[currentQuestionIndex] = { selected: selectedOptionIndex, isCorrect: isCorrect, status: 'answered' };
+
+        const correctOptionDiv = options[question.correctAnswerIndex];
+        correctOptionDiv.classList.add('correct');
+        correctOptionDiv.querySelector('.feedback-icon').textContent = '✔️';
+
+        const selectedOptionDiv = options[selectedOptionIndex];
+        const userChoiceEmoji = selectedOptionDiv.querySelector('.user-choice-emoji');
+        userChoiceEmoji.textContent = isCorrect ? '🥳' : '🤔';
+        if (!isCorrect) {
+            selectedOptionDiv.classList.add('incorrect');
+            selectedOptionDiv.querySelector('.feedback-icon').textContent = '❌';
+        }
+        userChoiceEmoji.classList.add('visible');
+
+        elements.explanationContainer.innerHTML = `<h4>Explanation</h4><p>${question.explanation}</p>`;
+        elements.explanationContainer.classList.remove('hidden');
+
+        elements.quizActions.innerHTML = '';
+        const nextActionBtn = document.createElement('button');
+        const hasMoreQuestions = userAnswers.some(a => a.status === 'unseen') || skippedQuestionIndices.length > 0;
+        
+        if (hasMoreQuestions) {
+            nextActionBtn.id = 'next-question-btn'; nextActionBtn.className = 'btn btn-full-width';
+            nextActionBtn.textContent = 'Next Question ➡️'; nextActionBtn.addEventListener('click', loadNextQuestion);
+        } else {
+            nextActionBtn.id = 'submit-quiz-btn'; nextActionBtn.className = 'btn btn-full-width btn-danger';
+            nextActionBtn.textContent = 'Finish & See Results'; nextActionBtn.addEventListener('click', showResults);
+        }
+        elements.quizActions.appendChild(nextActionBtn);
+    }
+
+    function showResults() {
+        showScreen('results');
+        clearInterval(timerId);
+        
+        const totalQuestions = quizData.length;
+        const correctCount = userAnswers.filter(ans => ans.isCorrect).length;
+        const incorrectCount = userAnswers.filter(ans => ans.status === 'answered' && !ans.isCorrect).length;
+        const skippedCount = userAnswers.filter(ans => ans.status === 'skipped' || ans.status === 'unseen').length;
+        const percentage = totalQuestions > 0 ? (correctCount / totalQuestions) * 100 : 0;
+        let remark = percentage >= 90 ? "Excellent!" : percentage >= 75 ? "Great Job!" : percentage >= 50 ? "Good Effort!" : "Needs Improvement";
+
+        const timeDiff = Math.round(((new Date()) - quizStartTime) / 1000);
+        const timeTaken = `${String(Math.floor(timeDiff / 60)).padStart(2, '0')}:${String(timeDiff % 60).padStart(2, '0')}`;
+        
+        elements.scoreSummary.textContent = `You scored ${correctCount} out of ${totalQuestions}!`;
+        elements.quizSummaryDetails.innerHTML = `
+            <div class="summary-item"><span class="summary-label">Performance</span><span class="summary-value remark">${remark}</span></div>
+            <div class="summary-item"><span class="summary-label">Score</span><span class="summary-value">${correctCount} / ${totalQuestions} (${percentage.toFixed(0)}%)</span></div>
+            <div class="summary-item"><span class="summary-label">Correct</span><span class="summary-value" style="color: var(--correct-color);">${correctCount}</span></div>
+            <div class="summary-item"><span class="summary-label">Incorrect</span><span class="summary-value" style="color: var(--incorrect-color);">${incorrectCount}</span></div>
+            <div class="summary-item"><span class="summary-label">Skipped</span><span class="summary-value" style="color: var(--skipped-color);">${skippedCount}</span></div>
+            <div class="summary-item"><span class="summary-label">Time Taken</span><span class="summary-value">${timeTaken}</span></div>
+            <div class="summary-item"><span class="summary-label">Topic</span><span class="summary-value">${quizData[0]?.topic || 'N/A'}</span></div>
+            <div class="summary-item"><span class="summary-label">Difficulty</span><span class="summary-value">${quizData[0]?.difficulty || 'N/A'}</span></div>
+        `;
+        elements.resultsReview.innerHTML = quizData.map((q, i) => `
+            <div class="result-item">
+                <p class="result-question"><strong>Q${i + 1}:</strong> ${q.question}<span class="bookmark-indicator ${bookmarkedQuestions.has(i) ? 'visible' : ''}">⭐</span></p>
+                ${q.image ? `<img src="${q.image}" style="max-width: 200px; border-radius: 5px; margin-top: 10px;">` : ''}
+                <ul class="result-options-list">${q.options.map((opt, oi) => `<li class="result-option ${oi === userAnswers[i].selected ? 'user-selected' : ''} ${oi === q.correctAnswerIndex ? 'correct-answer' : ''}">${opt}</li>`).join('')}</ul>
+                <div class="result-explanation"><h5>Explanation</h5><p>${q.explanation}</p></div>
+            </div>`).join('');
+    }
+
+    function restartQuiz() {
+        showScreen('welcome');
+        [elements.topicNameInput, elements.subjectNameInput, elements.topicExamInput, elements.contentExamInput, elements.contentTextInput, elements.resultsPageTelegramInput].forEach(el => el.value = '');
+        elements.imagePreviewContainer.innerHTML = '';
+        elements.fileInput.value = null;
+        multipleImageData = [];
+        quizStartTime = null;
+    }
+    
+    function generatePDF() {
+        alert("PDF generation for image-based quizzes is not yet supported. Please use the review screen.");
+    }
+    
+    function copyBookmarks() {
+        if (bookmarkedQuestions.size === 0) { alert("No questions have been bookmarked."); return; }
+        let clipboardText = "⭐ Bookmarked Questions & Answers ⭐\n\n";
+        bookmarkedQuestions.forEach(index => {
+            const q = quizData[index];
+            clipboardText += `📌 Q${index + 1}: ${q.question}\n`;
+            if (q.statements?.length > 0) { clipboardText += q.statements.map(s => `  - ${s}`).join('\n') + '\n'; }
+            if (q.image) { clipboardText += `(This question was based on an uploaded image.)\n`; }
+            clipboardText += `\nOptions:\n${q.options.map((o, oi) => `  ${String.fromCharCode(65 + oi)}) ${o}`).join('\n')}\n`;
+            clipboardText += `\n✅ Correct Answer: ${String.fromCharCode(65 + q.correctAnswerIndex)}) ${q.options[q.correctAnswerIndex]}\n💡 Explanation: ${q.explanation}\n\n---\n\n`;
+        });
+        navigator.clipboard.writeText(clipboardText).then(() => {
+            alert(`${bookmarkedQuestions.size} bookmarked question(s) copied to clipboard!`);
+        }).catch(err => {
+            alert('Could not copy automatically. Please try again or copy from the console.');
+            console.log("--- Bookmarked Content ---\n" + clipboardText);
+        });
+    }
+});
+</script>
+
+</body>
+</html>
